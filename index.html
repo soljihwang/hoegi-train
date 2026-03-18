@@ -777,10 +777,11 @@
     const result = json?.realtimeStationArrival?.RESULT;
     if (result?.code !== 'INFO-000') throw new Error(result?.message || '데이터 없음');
     const rows = json?.realtimeStationArrival?.row || [];
-    // 1호선·경의중앙선, 청량리 방향(하행)만
+    // 회기역, 청량리 방향 (updnLine === 0)
     return rows.filter(r =>
       (r.subwayId === '1001' || r.subwayId === '1063') &&
-      r.updnLine === '하행'
+      r.statnNm === '회기' &&
+      (r.updnLine === 0 || r.updnLine === '0')
     );
   }
 
