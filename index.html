@@ -1074,7 +1074,7 @@
       try {
         const json = JSON.parse(text);
         console.log('[realtimePosition] JSON 파싱 성공 - 최상위 키:', Object.keys(json));
-        const rows = json?.realtimePositionList || json?.realtimePositionList?.row || json?.row || [];
+        const rows = json?.realtimePositionList?.row || json?.row || [];
         console.log('[realtimePosition] row 개수:', rows.length);
         if (rows.length > 0) {
           console.log('[realtimePosition] 첫 번째 row 키:', Object.keys(rows[0]));
