@@ -679,7 +679,8 @@
       pageNo:     '1',
       _type:      'json',
     });
-    const res = await fetch(`${API_BASE}?${params}`);
+    const originalUrl = `${API_BASE}?${params}`;
+    const res = await fetch(`https://hoegi-proxy.xlarge205.workers.dev?url=${encodeURIComponent(originalUrl)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const items = json?.response?.body?.items?.item;
