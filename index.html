@@ -777,11 +777,17 @@
     const result = json?.realtimeStationArrival?.RESULT;
     if (result?.code !== 'INFO-000') throw new Error(result?.message || '데이터 없음');
     const rows = json?.realtimeStationArrival?.row || [];
-    // 회기역, 청량리 방향 (updnLine === 0)
+    console.log('[realtimeStationArrival] 전체 row 개수:', rows.length);
+    if (rows.length > 0) {
+      const uniqueStatnNm = [...new Set(rows.map(r => r.statnNm))].sort();
+      console.log('[realtimeStationArrival] 고유 statnNm 목록:', uniqueStatnNm);
+    }
+    // 회기역, 청량리 방향 (updnLine === '0')
+    // statnNm은 includes로 매칭 (공백/인코딩 차이 대비)
     return rows.filter(r =>
       (r.subwayId === '1001' || r.subwayId === '1063') &&
-      r.statnNm === '회기' &&
-      (r.updnLine === 0 || r.updnLine === '0')
+      r.statnNm && r.statnNm.includes('회기') &&
+      String(r.updnLine) === '0'
     );
   }
 
@@ -1067,10 +1073,20 @@
 
       try {
         const json = JSON.parse(text);
-        console.log('[realtimePosition] JSON 파싱 성공:', json);
+        console.log('[realtimePosition] JSON 파싱 성공 - 최상위 키:', Object.keys(json));
         const rows = json?.realtimePositionList?.row || json?.row || [];
         console.log('[realtimePosition] row 개수:', rows.length);
-        console.log('[realtimePosition] 첫 번째 row:', rows[0]);
+        if (rows.length > 0) {
+          console.log('[realtimePosition] 첫 번째 row 키:', Object.keys(rows[0]));
+          console.log('[realtimePosition] 전체 statnNm 목록:', rows.map(r => r.statnNm));
+          const uniqueStatnNm = [...new Set(rows.map(r => r.statnNm))].sort();
+          console.log('[realtimePosition] 고유 statnNm (정렬):', uniqueStatnNm);
+          const hoegi = rows.filter(r => r.statnNm && r.statnNm.includes('회기'));
+          console.log('[realtimePosition] "회기" 포함 row:', hoegi);
+        } else {
+          // row가 없으면 JSON 전체 구조 출력
+          console.log('[realtimePosition] row 없음 - JSON 전체:', JSON.stringify(json).slice(0, 2000));
+        }
       } catch (parseErr) {
         console.warn('[realtimePosition] JSON 파싱 실패:', parseErr.message);
       }
