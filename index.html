@@ -1049,6 +1049,37 @@
     renderList(rows, nowMin);
   }
 
+  // ── 실시간 위치 API 테스트 ────────────────────────────────────
+  async function testRealtimePosition() {
+    const targetUrl = 'http://swopenAPI.seoul.go.kr/api/subway/76436747776f686935394e4e4a5244/json/realtimePosition/0/200/1호선';
+    const proxyUrl = `https://hoegi-proxy.xlarge205.workers.dev?url=${encodeURIComponent(targetUrl)}`;
+
+    console.log('[realtimePosition] 요청 시작');
+    console.log('[realtimePosition] 프록시 URL:', proxyUrl);
+
+    try {
+      const res = await fetch(proxyUrl);
+      console.log('[realtimePosition] HTTP 상태:', res.status, res.statusText);
+
+      const text = await res.text();
+      console.log('[realtimePosition] 원본 응답 텍스트:', text);
+
+      try {
+        const json = JSON.parse(text);
+        console.log('[realtimePosition] JSON 파싱 성공:', json);
+        const rows = json?.realtimePositionList?.row || json?.row || [];
+        console.log('[realtimePosition] row 개수:', rows.length);
+        console.log('[realtimePosition] 첫 번째 row:', rows[0]);
+      } catch (parseErr) {
+        console.warn('[realtimePosition] JSON 파싱 실패:', parseErr.message);
+      }
+    } catch (err) {
+      console.error('[realtimePosition] fetch 실패:', err);
+    }
+  }
+
+  testRealtimePosition();
+
   // ── 초기화 ───────────────────────────────────────────────────
   updateClock();
   render();
