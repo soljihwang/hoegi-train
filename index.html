@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>회기역 시간표</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+    :root {
+      --bg: #1a1a2e;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f0f0;
+      --sub: rgba(240,240,240,0.55);
+      --muted: rgba(240,240,240,0.30);
+      --blue: #4f8ef7;
+      --blue-glow: rgba(79,142,247,0.25);
+      --mint: #3ecfb8;
+      --mint-glow: rgba(62,207,184,0.25);
+      --accent: #f7c94f;
+      --soon: rgba(247,201,79,0.10);
+      --soon-border: rgba(247,201,79,0.30);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    body {
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(79,142,247,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(62,207,184,0.06) 0%, transparent 60%);
+      padding: 20px 16px 40px;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* 헤더 */
+    .header {
+      margin-bottom: 28px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .station-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .station-label span {
+      color: var(--accent);
+    }
+
+    .clock-wrap {
+      text-align: right;
+      padding-top: 4px;
+    }
+
+    .clock {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .date-label {
+      font-size: 11px;
+      color: var(--sub);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .direction-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px 4px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sub);
+    }
+
+    .direction-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* 섹션 타이틀 */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      padding-left: 2px;
+    }
+
+    /* 다음 열차 강조 */
+    .next-train-section {
+      margin-bottom: 28px;
+    }
+
+    .next-train-card {
+      background: var(--surface);
+      border: 1px solid var(--soon-border);
+      border-radius: 20px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .next-train-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+
+    .next-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .next-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .next-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .next-badge.blue { background: var(--blue); box-shadow: 0 4px 16px var(--blue-glow); }
+    .next-badge.mint { background: var(--mint); box-shadow: 0 4px 16px var(--mint-glow); }
+
+    .next-info {
+      flex: 1;
+    }
+
+    .next-time {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 44px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .next-dest {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--sub);
+      margin-top: 2px;
+    }
+
+    .next-remaining {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      text-align: right;
+      line-height: 1;
+    }
+
+    .next-remaining-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: right;
+      margin-top: 2px;
+    }
+
+    /* 시간표 리스트 */
+    .timetable-section {
+      margin-bottom: 28px;
+    }
+
+    .timetable-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .time-row {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: opacity 0.2s;
+    }
+
+    .time-row.is-past {
+      opacity: 0.35;
+    }
+
+    .time-row.is-soon {
+      background: var(--soon);
+      border-color: rgba(247,201,79,0.15);
+    }
+
+    .row-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .row-badge.blue { background: var(--blue); }
+    .row-badge.mint { background: var(--mint); }
+
+    .row-info {}
+
+    .row-time {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .row-dest {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sub);
+      margin-top: 1px;
+    }
+
+    .row-remaining {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .row-remaining.soon {
+      color: var(--accent);
+    }
+
+    /* 탭 */
+    .tab-wrap {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--sub);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    /* 필터 */
+    .filter-wrap {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--sub);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active.blue {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .filter-btn.active.mint {
+      background: var(--mint);
+      border-color: var(--mint);
+      color: #fff;
+    }
+
+    .filter-btn.active.all {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+
+    /* 빈 상태 */
+    .empty {
+      text-align: center;
+      padding: 32px 0;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* 새로고침 버튼 */
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--sub);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 14px;
+      height: 32px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 20px;
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    .refresh-icon {
+      font-size: 14px;
+    }
+
+    /* 풋터 */
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    /* API 상태 표시 */
+    .api-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .api-status.ok { color: var(--mint); border-color: rgba(62,207,184,0.3); }
+    .api-status.err { color: var(--accent); border-color: rgba(247,201,79,0.3); }
+    .api-status.loading { color: var(--sub); }
+
+    .api-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-top">
+      <div class="station-label">회기<span>역</span></div>
+      <div class="clock-wrap">
+        <div class="clock" id="clock">00:00</div>
+        <div class="date-label" id="dateLabel">-</div>
+      </div>
+    </div>
+    <div class="direction-tag">
+      <div class="direction-dot"></div>
+      청량리 방향
+    </div>
+  </div>
+
+  <!-- API 상태 -->
+  <div class="api-status loading" id="apiStatus">
+    <div class="api-dot"></div>
+    <span id="apiStatusText">데이터 불러오는 중...</span>
+  </div>
+
+  <!-- 다음 열차 -->
+  <div class="next-train-section">
+    <div class="section-title">다음 열차</div>
+    <div class="next-train-card" id="nextTrainCard">
+      <div class="empty">시간표 데이터 없음</div>
+    </div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tab-wrap">
+    <button class="tab-btn active" onclick="setTab('upcoming')" id="tab-upcoming">이후 열차</button>
+    <button class="tab-btn" onclick="setTab('all')" id="tab-all">전체 시간표</button>
+  </div>
+
+  <!-- 필터 -->
+  <div class="filter-wrap">
+    <button class="filter-btn active all" onclick="setFilter('all')" id="filter-all">전체</button>
+    <button class="filter-btn" onclick="setFilter('1')" id="filter-1">1호선</button>
+    <button class="filter-btn" onclick="setFilter('중')" id="filter-중">경의중앙선</button>
+  </div>
+
+  <!-- 시간표 -->
+  <div class="timetable-section">
+    <div class="timetable-list" id="timetableList">
+      <div class="empty">불러오는 중...</div>
+    </div>
+  </div>
+
+  <button class="refresh-btn" onclick="render()">
+    <span class="refresh-icon">↻</span> 새로고침
+  </button>
+
+  <div class="footer">v1.0 · 시간표 기준 · 실시간 위치 준비 중</div>
+</div>
+
+<script>
+  // ── API 설정 ────────────────────────────────────────────────────
+  const API_KEY  = 'e4170c275216be7891125bd3a676bd992a1ad109b5485da2885996a5f25fbc13';
+  const API_BASE = 'https://apis.data.go.kr/B553766/schedule/getTrainSch';
+
+  // 회기역 코드 (청량리 방향 = 하행 updnLine:2)
+  // subwayId: 1호선=1001, 경의중앙선=1063
+  const STATION_CONFIGS = [
+    { stinCd: '0150', subwayId: '1001', badge: '1',  updnLine: '2' },
+    { stinCd: 'K117', subwayId: '1063', badge: '중', updnLine: '2' },
+  ];
+
+  // ── 폴백 정적 시간표 ───────────────────────────────────────────
+  const TIMETABLE = {
+    weekday: [
+      { badge: '1', time: '05:18', dest: '청량리' },
+      { badge: '중', time: '05:21', dest: '왕십리' },
+      { badge: '1', time: '05:26', dest: '광운대' },
+      { badge: '중', time: '05:31', dest: '덕소' },
+      { badge: '1', time: '05:35', dest: '의정부' },
+      { badge: '1', time: '05:41', dest: '광운대' },
+      { badge: '중', time: '05:44', dest: '문산' },
+      { badge: '1', time: '05:49', dest: '청량리' },
+      { badge: '중', time: '05:53', dest: '왕십리' },
+      { badge: '1', time: '05:57', dest: '광운대' },
+      { badge: '1', time: '06:02', dest: '의정부' },
+      { badge: '중', time: '06:05', dest: '덕소' },
+      { badge: '1', time: '06:09', dest: '청량리' },
+      { badge: '중', time: '06:13', dest: '문산' },
+      { badge: '1', time: '06:16', dest: '광운대' },
+      { badge: '1', time: '06:21', dest: '의정부' },
+      { badge: '중', time: '06:24', dest: '왕십리' },
+      { badge: '1', time: '06:28', dest: '청량리' },
+      { badge: '중', time: '06:32', dest: '덕소' },
+      { badge: '1', time: '06:36', dest: '광운대' },
+      { badge: '1', time: '06:41', dest: '의정부' },
+      { badge: '중', time: '06:45', dest: '문산' },
+      { badge: '1', time: '06:49', dest: '청량리' },
+      { badge: '중', time: '06:54', dest: '왕십리' },
+      { badge: '1', time: '06:58', dest: '광운대' },
+      { badge: '1', time: '07:03', dest: '의정부' },
+      { badge: '중', time: '07:07', dest: '덕소' },
+      { badge: '1', time: '07:11', dest: '청량리' },
+      { badge: '중', time: '07:15', dest: '문산' },
+      { badge: '1', time: '07:19', dest: '광운대' },
+      { badge: '1', time: '07:24', dest: '의정부' },
+      { badge: '중', time: '07:28', dest: '왕십리' },
+      { badge: '1', time: '07:32', dest: '청량리' },
+      { badge: '중', time: '07:37', dest: '덕소' },
+      { badge: '1', time: '07:41', dest: '광운대' },
+      { badge: '1', time: '07:46', dest: '의정부' },
+      { badge: '중', time: '07:50', dest: '문산' },
+      { badge: '1', time: '07:54', dest: '청량리' },
+      { badge: '중', time: '07:58', dest: '왕십리' },
+      { badge: '1', time: '08:02', dest: '광운대' },
+      { badge: '1', time: '08:07', dest: '의정부' },
+      { badge: '중', time: '08:11', dest: '덕소' },
+      { badge: '1', time: '08:15', dest: '청량리' },
+      { badge: '중', time: '08:20', dest: '문산' },
+      { badge: '1', time: '08:24', dest: '광운대' },
+      { badge: '1', time: '08:29', dest: '의정부' },
+      { badge: '중', time: '08:33', dest: '왕십리' },
+      { badge: '1', time: '08:37', dest: '청량리' },
+      { badge: '중', time: '08:42', dest: '덕소' },
+      { badge: '1', time: '08:46', dest: '광운대' },
+      { badge: '1', time: '08:51', dest: '의정부' },
+      { badge: '중', time: '08:55', dest: '문산' },
+      { badge: '1', time: '08:59', dest: '청량리' },
+      { badge: '중', time: '09:04', dest: '왕십리' },
+      { badge: '1', time: '09:08', dest: '광운대' },
+      { badge: '1', time: '21:42', dest: '광운대' },
+      { badge: '중', time: '21:45', dest: '문산' },
+      { badge: '1', time: '21:49', dest: '용산' },
+      { badge: '1', time: '21:52', dest: '광운대' },
+      { badge: '중', time: '21:54', dest: '왕십리' },
+      { badge: '1', time: '21:57', dest: '의정부' },
+      { badge: '중', time: '22:01', dest: '덕소' },
+      { badge: '1', time: '22:05', dest: '청량리' },
+      { badge: '중', time: '22:09', dest: '문산' },
+      { badge: '1', time: '22:14', dest: '광운대' }
+    ],
+    saturday: [
+      { badge: '1', time: '05:25', dest: '청량리' },
+      { badge: '중', time: '05:32', dest: '왕십리' },
+      { badge: '1', time: '05:39', dest: '광운대' },
+      { badge: '중', time: '05:46', dest: '덕소' },
+      { badge: '1', time: '05:53', dest: '의정부' },
+      { badge: '중', time: '06:01', dest: '문산' },
+      { badge: '1', time: '06:08', dest: '청량리' },
+      { badge: '중', time: '06:15', dest: '왕십리' },
+      { badge: '1', time: '06:22', dest: '광운대' },
+      { badge: '중', time: '06:29', dest: '덕소' },
+      { badge: '1', time: '06:36', dest: '의정부' },
+      { badge: '중', time: '06:44', dest: '문산' },
+      { badge: '1', time: '06:51', dest: '청량리' },
+      { badge: '중', time: '06:58', dest: '왕십리' },
+      { badge: '1', time: '07:05', dest: '광운대' },
+      { badge: '1', time: '21:44', dest: '광운대' },
+      { badge: '중', time: '21:49', dest: '문산' },
+      { badge: '1', time: '21:55', dest: '청량리' },
+      { badge: '중', time: '22:02', dest: '덕소' }
+    ],
+    holiday: [
+      { badge: '1', time: '05:30', dest: '청량리' },
+      { badge: '중', time: '05:38', dest: '왕십리' },
+      { badge: '1', time: '05:46', dest: '광운대' },
+      { badge: '중', time: '05:54', dest: '덕소' },
+      { badge: '1', time: '06:02', dest: '의정부' },
+      { badge: '중', time: '06:10', dest: '문산' },
+      { badge: '1', time: '06:18', dest: '청량리' },
+      { badge: '중', time: '06:26', dest: '왕십리' },
+      { badge: '1', time: '06:34', dest: '광운대' },
+      { badge: '중', time: '06:42', dest: '덕소' },
+      { badge: '1', time: '06:50', dest: '의정부' },
+      { badge: '중', time: '06:58', dest: '문산' },
+      { badge: '1', time: '07:06', dest: '청량리' },
+      { badge: '중', time: '07:14', dest: '왕십리' },
+      { badge: '1', time: '07:22', dest: '광운대' },
+      { badge: '1', time: '21:46', dest: '청량리' },
+      { badge: '중', time: '21:53', dest: '왕십리' },
+      { badge: '1', time: '22:00', dest: '광운대' }
+    ]
+  };
+
+  // ── 상태 ──────────────────────────────────────────────────────
+  let currentTab = 'upcoming';
+  let currentFilter = 'all';
+  let liveData = null;  // API에서 받아온 데이터 (dayType별 캐시)
+  let dataSource = 'static'; // 'api' | 'static'
+
+  // ── 유틸 ──────────────────────────────────────────────────────
+  function getDayType() {
+    const d = new Date().getDay();
+    if (d === 0) return 'holiday';
+    if (d === 6) return 'saturday';
+    return 'weekday';
+  }
+
+  function parseMin(hm) {
+    const [h, m] = hm.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function getNowMin() {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function badgeClass(badge) {
+    return badge === '중' ? 'mint' : 'blue';
+  }
+
+  function remainingText(diffMin) {
+    if (diffMin <= 0) return '출발';
+    if (diffMin < 60) return `${diffMin}분 후`;
+    const h = Math.floor(diffMin / 60);
+    const m = diffMin % 60;
+    return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+  }
+
+  // ── API 호출 ──────────────────────────────────────────────────
+  function dayTypeToDayCd(dayType) {
+    if (dayType === 'saturday') return '2';
+    if (dayType === 'holiday')  return '3';
+    return '1';
+  }
+
+  function parseApiTime(str) {
+    // API 반환 형식: "055500" → "05:55"  또는 "05:55:00" → "05:55"
+    if (!str) return null;
+    const s = str.replace(/:/g, '');
+    if (s.length < 4) return null;
+    return `${s.slice(0, 2)}:${s.slice(2, 4)}`;
+  }
+
+  async function fetchOneLine(cfg, dayCd) {
+    const params = new URLSearchParams({
+      serviceKey: API_KEY,
+      stinCd:     cfg.stinCd,
+      subwayId:   cfg.subwayId,
+      dayCd,
+      updnLine:   cfg.updnLine,
+      numOfRows:  '1000',
+      pageNo:     '1',
+      _type:      'json',
+    });
+    const res = await fetch(`${API_BASE}?${params}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const items = json?.response?.body?.items?.item;
+    if (!items) return [];
+    const arr = Array.isArray(items) ? items : [items];
+    return arr.map(item => {
+      const timeStr = item.dptTm || item.arvTm || '';
+      const time = parseApiTime(timeStr);
+      if (!time) return null;
+      return { badge: cfg.badge, time, dest: item.bstatnNm || '-' };
+    }).filter(Boolean);
+  }
+
+  async function fetchAllLines(dayType) {
+    const dayCd = dayTypeToDayCd(dayType);
+    const results = await Promise.all(
+      STATION_CONFIGS.map(cfg => fetchOneLine(cfg, dayCd))
+    );
+    return results.flat();
+  }
+
+  function setApiStatus(state, msg) {
+    const el = document.getElementById('apiStatus');
+    const txt = document.getElementById('apiStatusText');
+    el.className = 'api-status ' + state;
+    txt.textContent = msg;
+  }
+
+  async function loadFromAPI() {
+    setApiStatus('loading', '시간표 불러오는 중...');
+    try {
+      const dayType = getDayType();
+      const trains = await fetchAllLines(dayType);
+      if (!trains.length) throw new Error('데이터 없음');
+      liveData = trains;
+      dataSource = 'api';
+      setApiStatus('ok', 'API 연동 · 실시간 시간표');
+    } catch (e) {
+      dataSource = 'static';
+      setApiStatus('err', '정적 데이터 사용 중 (API 오류)');
+      console.warn('[API 오류]', e.message);
+    }
+    render();
+  }
+
+  // ── 시계 ──────────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const dayType = getDayType();
+    const dayTypeLabel = dayType === 'holiday' ? '공휴일' : dayType === 'saturday' ? '토요일' : '평일';
+    document.getElementById('dateLabel').textContent =
+      `${now.getMonth()+1}/${now.getDate()}(${days[now.getDay()]}) · ${dayTypeLabel}`;
+  }
+
+  // ── 다음 열차 렌더 ────────────────────────────────────────────
+  function renderNextTrain(rows, nowMin) {
+    const future = rows.filter(r => parseMin(r.time) >= nowMin);
+    const card = document.getElementById('nextTrainCard');
+
+    if (!future.length) {
+      card.innerHTML = '<div class="empty">오늘 마지막 열차가 지났습니다</div>';
+      return;
+    }
+
+    const next = future[0];
+    const diffMin = parseMin(next.time) - nowMin;
+    const cls = badgeClass(next.badge);
+
+    card.innerHTML = `
+      <div class="next-label">NEXT TRAIN</div>
+      <div class="next-main">
+        <div class="next-badge ${cls}">${next.badge}</div>
+        <div class="next-info">
+          <div class="next-time">${next.time}</div>
+          <div class="next-dest">${next.dest} 방면</div>
+        </div>
+        <div>
+          <div class="next-remaining">${diffMin <= 0 ? '출발' : diffMin + '분'}</div>
+          <div class="next-remaining-label">${diffMin <= 0 ? '' : '후 출발'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── 시간표 리스트 렌더 ────────────────────────────────────────
+  function renderList(rows, nowMin) {
+    let filtered = rows;
+
+    // 탭 필터
+    if (currentTab === 'upcoming') {
+      filtered = filtered.filter(r => parseMin(r.time) >= nowMin);
+    }
+
+    // 노선 필터
+    if (currentFilter !== 'all') {
+      filtered = filtered.filter(r => r.badge === currentFilter);
+    }
+
+    const list = document.getElementById('timetableList');
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="empty">표시할 열차가 없습니다</div>';
+      return;
+    }
+
+    const nowMinVal = nowMin;
+    list.innerHTML = filtered.map((row, idx) => {
+      const rowMin = parseMin(row.time);
+      const diff = rowMin - nowMinVal;
+      const isPast = diff < 0;
+      const isSoon = diff >= 0 && diff <= 5;
+      const cls = badgeClass(row.badge);
+      const remText = isPast ? '지남' : remainingText(diff);
+      const remCls = isSoon ? 'soon' : '';
+
+      return `
+        <div class="time-row ${isPast ? 'is-past' : ''} ${isSoon ? 'is-soon' : ''}">
+          <div class="row-badge ${cls}">${row.badge}</div>
+          <div class="row-info">
+            <div class="row-time">${row.time}</div>
+            <div class="row-dest">${row.dest} 방면</div>
+          </div>
+          <div class="row-remaining ${remCls}">${remText}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── 탭/필터 ──────────────────────────────────────────────────
+  function setTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    render();
+  }
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'blue', 'mint', 'all'));
+    const btn = document.getElementById('filter-' + f);
+    btn.classList.add('active');
+    if (f === '1') btn.classList.add('blue');
+    else if (f === '중') btn.classList.add('mint');
+    else btn.classList.add('all');
+    render();
+  }
+
+  // ── 메인 렌더 ────────────────────────────────────────────────
+  function render() {
+    const dayType = getDayType();
+    const source = (dataSource === 'api' && liveData)
+      ? liveData
+      : (TIMETABLE[dayType] || []);
+    const rows = source.slice().sort((a, b) => parseMin(a.time) - parseMin(b.time));
+    const nowMin = getNowMin();
+
+    renderNextTrain(rows, nowMin);
+    renderList(rows, nowMin);
+  }
+
+  // ── 초기화 ───────────────────────────────────────────────────
+  updateClock();
+  render();
+  loadFromAPI();
+  setInterval(() => { updateClock(); render(); }, 30000);
+  // 매 10분마다 API 재조회
+  setInterval(loadFromAPI, 10 * 60 * 1000);
+</script>
+</body>
+</html>
