@@ -581,7 +581,7 @@
 <script>
   // ── API 설정 ────────────────────────────────────────────────────
   // 서울 열린데이터광장 열차시간표 API
-  const API_BASE = 'http://openapi.seoul.go.kr:8088/76436747776f686935394e4e4a5244/json/getTrainSch';
+  const API_BASE = 'http://openapi.seoul.go.kr:8088/76436747776f686935394e4e4a5244/json/getTrainSch/1/500';
   const PROXY   = 'https://hoegi-proxy.xlarge205.workers.dev';
 
   // 서울 열린데이터광장 실시간 도착 API (https://data.seoul.go.kr 에서 발급)
@@ -879,7 +879,14 @@
   }
 
   async function fetchOneLine(cfg, weekTag) {
-    const originalUrl = `${API_BASE}/1/500/N/${encodeURIComponent(cfg.inoutTag)}/${encodeURIComponent(weekTag)}/${encodeURIComponent(cfg.lineNm)}/${encodeURIComponent(cfg.stinNm)}`;
+    const params = new URLSearchParams({
+      tmprTmtblYn: 'N',
+      upbdnbSe: cfg.inoutTag,
+      wkndSe: weekTag,
+      lineNm: cfg.lineNm,
+      stnNm: cfg.stinNm,
+    });
+    const originalUrl = `${API_BASE}?${params.toString()}`;
     console.log('[시간표 API] 요청 URL:', originalUrl);
     const res = await fetch(`${PROXY}?url=${encodeURIComponent(originalUrl)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
