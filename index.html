@@ -580,18 +580,18 @@
 
 <script>
   // ── API 설정 ────────────────────────────────────────────────────
-  const API_KEY  = 'e4170c275216be7891125bd3a676bd992a1ad109b5485da2885996a5f25fbc13';
-  const API_BASE = 'https://apis.data.go.kr/B553766/schedule/getTrainSch';
+  // 서울 열린데이터광장 열차시간표 API
+  const API_BASE = 'http://openapi.seoul.go.kr:8088/76436747776f686935394e4e4a5244/json/getTrainSch';
+  const PROXY   = 'https://hoegi-proxy.xlarge205.workers.dev';
 
   // 서울 열린데이터광장 실시간 도착 API (https://data.seoul.go.kr 에서 발급)
   const SEOUL_API_KEY = 'YOUR_SEOUL_API_KEY';
   const REALTIME_BASE = 'http://swopenAPI.seoul.go.kr/api/subway';
 
-  // 회기역 코드 (청량리 방향 = 하행 updnLine:2)
-  // subwayId: 1호선=1001, 경의중앙선=1063
+  // 회기역 시간표 설정 (노선명, 방향, 역명)
   const STATION_CONFIGS = [
-    { stinCd: '0150', subwayId: '1001', badge: '1',  updnLine: '2' },
-    { stinCd: 'K117', subwayId: '1063', badge: '중', updnLine: '2' },
+    { lineNm: '1호선',     inoutTag: '상행', badge: '1',  stinNm: '회기' },
+    { lineNm: '경의중앙선', inoutTag: '상행', badge: '중', stinNm: '회기' },
   ];
 
   // ── 폴백 정적 시간표 ───────────────────────────────────────────
@@ -865,9 +865,9 @@
 
   // ── API 호출 ──────────────────────────────────────────────────
   function dayTypeToDayCd(dayType) {
-    if (dayType === 'saturday') return '2';
-    if (dayType === 'holiday')  return '3';
-    return '1';
+    if (dayType === 'saturday') return '토요일';
+    if (dayType === 'holiday')  return '휴일';
+    return '평일';
   }
 
   function parseApiTime(str) {
@@ -878,36 +878,25 @@
     return `${s.slice(0, 2)}:${s.slice(2, 4)}`;
   }
 
-  async function fetchOneLine(cfg, dayCd) {
-    const params = new URLSearchParams({
-      serviceKey: API_KEY,
-      stinCd:     cfg.stinCd,
-      subwayId:   cfg.subwayId,
-      dayCd,
-      updnLine:   cfg.updnLine,
-      numOfRows:  '1000',
-      pageNo:     '1',
-      _type:      'json',
-    });
-    const originalUrl = `${API_BASE}?${params}`;
-    const res = await fetch(`https://hoegi-proxy.xlarge205.workers.dev?url=${encodeURIComponent(originalUrl)}`);
+  async function fetchOneLine(cfg, weekTag) {
+    const originalUrl = `${API_BASE}/1/500/N/${encodeURIComponent(cfg.inoutTag)}/${encodeURIComponent(weekTag)}/${encodeURIComponent(cfg.lineNm)}/${encodeURIComponent(cfg.stinNm)}`;
+    const res = await fetch(`${PROXY}?url=${encodeURIComponent(originalUrl)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    const items = json?.response?.body?.items?.item;
-    if (!items) return [];
-    const arr = Array.isArray(items) ? items : [items];
-    return arr.map(item => {
-      const timeStr = item.dptTm || item.arvTm || '';
+    const rows = json?.getTrainSch?.row;
+    if (!rows || !rows.length) return [];
+    return rows.map(item => {
+      const timeStr = item.LEFTTIME || item.ARRIVETIME || '';
       const time = parseApiTime(timeStr);
       if (!time) return null;
-      return { badge: cfg.badge, time, dest: item.bstatnNm || '-' };
+      return { badge: cfg.badge, time, dest: item.DEST_STIN_NM || '-' };
     }).filter(Boolean);
   }
 
   async function fetchAllLines(dayType) {
-    const dayCd = dayTypeToDayCd(dayType);
+    const weekTag = dayTypeToDayCd(dayType);
     const results = await Promise.all(
-      STATION_CONFIGS.map(cfg => fetchOneLine(cfg, dayCd))
+      STATION_CONFIGS.map(cfg => fetchOneLine(cfg, weekTag))
     );
     return results.flat();
   }
