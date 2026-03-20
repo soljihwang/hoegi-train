@@ -917,9 +917,11 @@
   }
 
   async function loadFromAPI() {
+    console.log('[loadFromAPI] 시작');
     setApiStatus('loading', '시간표 불러오는 중...');
     try {
       const dayType = getDayType();
+      console.log('[loadFromAPI] dayType:', dayType);
       const trains = await fetchAllLines(dayType);
       if (!trains.length) throw new Error('데이터 없음');
       liveData = trains;
