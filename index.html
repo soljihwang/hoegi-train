@@ -880,6 +880,7 @@
 
   async function fetchOneLine(cfg, weekTag) {
     const originalUrl = `${API_BASE}/1/500/N/${encodeURIComponent(cfg.inoutTag)}/${encodeURIComponent(weekTag)}/${encodeURIComponent(cfg.lineNm)}/${encodeURIComponent(cfg.stinNm)}`;
+    console.log('[시간표 API] 요청 URL:', originalUrl);
     const res = await fetch(`${PROXY}?url=${encodeURIComponent(originalUrl)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
